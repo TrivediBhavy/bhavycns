@@ -1,43 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Secure Messaging App</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; padding: 10px; }
-    textarea, input, button { width: 100%; margin-top: 10px; padding: 8px; }
-    .section { margin-bottom: 30px; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #e0eafc, #cfdef3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 800px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      color: #333;
+    }
+
+    h2, h3 {
+      text-align: center;
+      color: #222;
+    }
+
+    textarea, input, button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1em;
+      resize: vertical;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    textarea {
+      min-height: 80px;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    ::placeholder {
+      color: #888;
+    }
   </style>
 </head>
 <body>
 
-  <h2>🔐 Secure Messaging App (AES + RSA)</h2>
+  <div class="container">
+    <h2>🔐 Secure Messaging App (AES + RSA)</h2>
 
-  <div class="section">
-    <h3>1. Generate RSA Keys</h3>
-    <button onclick="generateRSAKeys()">Generate RSA Key Pair</button>
-    <textarea id="publicKey" placeholder="Public Key (Share this)"></textarea>
-    <textarea id="privateKey" placeholder="Private Key (Keep this secret)"></textarea>
-  </div>
+    <div class="section">
+      <h3>1. Generate RSA Keys</h3>
+      <button onclick="generateRSAKeys()">Generate RSA Key Pair</button>
+      <textarea id="publicKey" placeholder="Public Key (Share this)"></textarea>
+      <textarea id="privateKey" placeholder="Private Key (Keep this secret)"></textarea>
+    </div>
 
-  <div class="section">
-    <h3>2. Encrypt Message</h3>
-    <textarea id="message" placeholder="Enter message to encrypt"></textarea>
-    <button onclick="encryptMessage()">Encrypt</button>
-    <textarea id="encryptedMessage" placeholder="Encrypted Message"></textarea>
-    <textarea id="encryptedAESKey" placeholder="Encrypted AES Key"></textarea>
-  </div>
+    <div class="section">
+      <h3>2. Encrypt Message</h3>
+      <textarea id="message" placeholder="Enter message to encrypt"></textarea>
+      <button onclick="encryptMessage()">Encrypt</button>
+      <textarea id="encryptedMessage" placeholder="Encrypted Message"></textarea>
+      <textarea id="encryptedAESKey" placeholder="Encrypted AES Key"></textarea>
+    </div>
 
-  <div class="section">
-    <h3>3. Decrypt Message</h3>
-    <button onclick="decryptMessage()">Decrypt</button>
-    <textarea id="decryptedMessage" placeholder="Decrypted Message"></textarea>
+    <div class="section">
+      <h3>3. Decrypt Message</h3>
+      <button onclick="decryptMessage()">Decrypt</button>
+      <textarea id="decryptedMessage" placeholder="Decrypted Message"></textarea>
+    </div>
   </div>
 
   <script>
     let aesKey, iv;
 
-    // Generate RSA Key Pair
     async function generateRSAKeys() {
       const keyPair = await window.crypto.subtle.generateKey(
         { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
@@ -53,20 +113,17 @@
       alert("RSA Key Pair Generated!");
     }
 
-    // Encrypt Message using AES and encrypt AES key with RSA
     async function encryptMessage() {
       const message = document.getElementById("message").value;
 
-      // Generate AES Key
       aesKey = await window.crypto.subtle.generateKey(
         { name: "AES-GCM", length: 256 },
         true,
         ["encrypt", "decrypt"]
       );
 
-      iv = window.crypto.getRandomValues(new Uint8Array(12)); // Initialization vector
+      iv = window.crypto.getRandomValues(new Uint8Array(12));
 
-      // Encrypt Message
       const encoded = new TextEncoder().encode(message);
       const encryptedData = await window.crypto.subtle.encrypt(
         { name: "AES-GCM", iv },
@@ -76,7 +133,6 @@
       const encryptedMsgBase64 = btoa(String.fromCharCode(...new Uint8Array(encryptedData)));
       document.getElementById("encryptedMessage").value = encryptedMsgBase64;
 
-      // Encrypt AES Key using RSA
       const exportedAESKey = await window.crypto.subtle.exportKey("raw", aesKey);
       const publicKeyRaw = Uint8Array.from(atob(document.getElementById("publicKey").value), c => c.charCodeAt(0));
       const importedPubKey = await window.crypto.subtle.importKey(
@@ -97,7 +153,6 @@
       alert("Message Encrypted!");
     }
 
-    // Decrypt Message
     async function decryptMessage() {
       const encryptedAESKeyBase64 = document.getElementById("encryptedAESKey").value;
       const encryptedMessageBase64 = document.getElementById("encryptedMessage").value;
@@ -114,7 +169,6 @@
         ["decrypt"]
       );
 
-      // Decrypt AES key
       const rawAESKey = await window.crypto.subtle.decrypt(
         { name: "RSA-OAEP" },
         importedPrivKey,
@@ -129,7 +183,6 @@
         ["decrypt"]
       );
 
-      // Decrypt message
       const decryptedData = await window.crypto.subtle.decrypt(
         { name: "AES-GCM", iv },
         aesKey,
@@ -144,3 +197,5 @@
 
 </body>
 </html>
+
+     
